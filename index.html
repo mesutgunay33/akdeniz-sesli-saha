@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#4c2b7f">
+  <title>Akdeniz Sesli SAHA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>AKDENİZ SESLİ SAHA</h1>
+      <p>Konuş → Taslak oluştur → Kontrol et</p>
+    </div>
+    <span class="badge">V1</span>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h2>🎙️ Sesli Saha Asistanı</h2>
+      <p>Mevcut SAHA uygulamasından bağımsız test uygulamasıdır. İlk sürüm Yarının İş Programı konuşmasını yapılandırır.</p>
+    </section>
+
+    <section class="cards">
+      <button class="card primary-card" onclick="openWorkPlan()">
+        <span class="ico">📅</span>
+        <span>
+          <b>Yarının Programını Konuş</b>
+          <small>Ekip, lokasyon, iş, sorumlu, saat ve hedefi ayır.</small>
+        </span>
+        <span class="arrow">›</span>
+      </button>
+
+      <button class="card muted-card" onclick="openDaily()">
+        <span class="ico">📋</span>
+        <span>
+          <b>Günlük Raporu Konuş</b>
+          <small>Bir sonraki aşamada aktif olacak.</small>
+        </span>
+        <span class="arrow">›</span>
+      </button>
+    </section>
+
+    <div id="notice" class="notice">
+      İlk testte yalnızca konuşmanın doğru yazıya çevrilmesini ve alanlara ayrılmasını kontrol edeceğiz.
+    </div>
+  </main>
+
+  <section id="workView" class="view hidden">
+    <div class="viewhead">
+      <button onclick="closeView('workView')">← Geri</button>
+      <div>
+        <h2>📅 Yarının İş Programı</h2>
+        <small>Sesli taslak</small>
+      </div>
+    </div>
+
+    <div class="viewbody">
+      <section class="panel voice-panel">
+        <h3>🎙️ Konuş</h3>
+        <button id="startBtn" class="micbtn" onclick="toggleRecognition()">🎙️ Konuşmaya Başla</button>
+        <p class="hint">Örnek: “Ekip 2 MAOG deplase hattında 280'lik boru döşeyecek. Sorumlu Hasan Alperen Bahar. Başlangıç 08:00, bitiş 17:00. Hedef 150 metre.”</p>
+        <div id="status" class="status">Hazır.</div>
+        <textarea id="transcript" placeholder="Konuşmanız burada yazıya dökülecek…"></textarea>
+        <div class="actions">
+          <button class="secondary" onclick="clearTranscript()">Temizle</button>
+          <button class="success" onclick="parseTranscript()">Taslak Oluştur</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h3>🧠 Oluşturulan Taslak</h3>
+          <span id="confidence" class="pill">Bekliyor</span>
+        </div>
+
+        <div class="grid">
+          <label>Ekip
+            <input id="team" placeholder="Ekip 1">
+          </label>
+          <label>Sorumlu
+            <input id="supervisor" placeholder="Ad Soyad">
+          </label>
+          <label class="full">Lokasyon / Hat
+            <input id="location" placeholder="Çalışma bölgesi">
+          </label>
+          <label class="full">Yapılacak İş
+            <textarea id="work" placeholder="Yapılacak iş"></textarea>
+          </label>
+          <label>Başlangıç
+            <input id="start" type="time" value="08:00">
+          </label>
+          <label>Bitiş
+            <input id="end" type="time" value="17:00">
+          </label>
+          <label>Hedef Miktar
+            <input id="targetQty" type="number" step="0.01">
+          </label>
+          <label>Birim
+            <select id="targetUnit">
+              <option value="">Seçin</option>
+              <option>m</option>
+              <option>m²</option>
+              <option>m³</option>
+              <option>adet</option>
+              <option>ton</option>
+              <option>kg</option>
+            </select>
+          </label>
+          <label class="full">Personel (konuşmadan yakalanan)
+            <textarea id="people" placeholder="İsimleri virgülle ayırın"></textarea>
+          </label>
+          <label class="full">Araç / Makine (konuşmadan yakalanan)
+            <textarea id="vehicles" placeholder="Araç veya makine adları"></textarea>
+          </label>
+          <label class="full">Not
+            <textarea id="note"></textarea>
+          </label>
+        </div>
+
+        <button class="save" onclick="showPreview()">TASLAĞI KONTROL ET</button>
+      </section>
+    </div>
+  </section>
+
+  <section id="dailyView" class="view hidden">
+    <div class="viewhead">
+      <button onclick="closeView('dailyView')">← Geri</button>
+      <div><h2>📋 Günlük Rapor</h2><small>Yakında</small></div>
+    </div>
+    <div class="viewbody">
+      <section class="panel">
+        <h3>Bir sonraki aşama</h3>
+        <p>Yarının İş Programı sesli akışı başarılı olduktan sonra aynı motor Günlük Rapor alanlarına bağlanacak.</p>
+      </section>
+    </div>
+  </section>
+
+  <section id="preview" class="modal hidden">
+    <div class="modalbox">
+      <div class="section-title">
+        <h2>✅ Kontrol</h2>
+        <button class="x" onclick="closePreview()">✕</button>
+      </div>
+      <div id="previewBody"></div>
+      <div class="actions">
+        <button class="secondary" onclick="closePreview()">Düzenlemeye Dön</button>
+        <button class="success" onclick="exportJson()">JSON Olarak Kaydet</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
