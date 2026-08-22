@@ -19,6 +19,9 @@ const guidedSteps=[
     question:'Yapılacak iş nedir?'
   },
   {
+  key:'diameter',
+  question:'Boru çapı nedir? Örneğin 1000.'
+},
     key:'supervisor',
     question:'Sorumlu kim?'
   },
@@ -441,10 +444,24 @@ if(!check.ok){
 
     $('work').value=
       formatWorkAnswer(answer);
+    }
+  else if(step.key==='diameter'){
+
+  const m=String(answer).match(/\d{2,4}/);
+
+  if(m){
+    const diameter=m[0];
+
+    let currentWork=
+      $('work').value.trim();
+
+    currentWork=
+      currentWork.replace(/^Ø\d+\s*/,'').trim();
+
+    $('work').value=
+      'Ø'+diameter+' '+currentWork;
   }
-
-
-  else if(step.key==='supervisor'){
+}  else if(step.key==='supervisor'){
 
     const person=
       formatPersonAnswer(answer);
@@ -601,7 +618,26 @@ function validateGuidedAnswer(key,answer){
     }
   }
 
+if(key==='diameter'){
 
+  const m=raw.match(/\d{2,4}/);
+
+  if(!m){
+    return {
+      ok:false,
+      message:'Boru çapını anlayamadım. Örneğin 1000 deyin.'
+    };
+  }
+
+  const n=Number(m[0]);
+
+  if(n<100 || n>3000){
+    return {
+      ok:false,
+      message:'Boru çapını anlayamadım. Çapı tekrar söyleyin.'
+    };
+  }
+}
   if(key==='target'){
 
     if(!/\d/.test(raw)){
