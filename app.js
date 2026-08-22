@@ -6,33 +6,17 @@ let guidedActive=false;
 let guidedIndex=0;
 
 const guidedSteps=[
-  {
-    key:'team',
-    question:'Hangi ekip? Örneğin Ekip 1.'
-  },
-  {
-    key:'location',
-    question:'Kilometre nedir? Örneğin 3 artı 600.'
-  },
-  {
-    key:'work',
-    question:'Yapılacak iş nedir?'
-  },
-  {
-  key:'diameter',
-  question:'Boru çapı nedir? Örneğin 1000.'
-},
-    key:'supervisor',
-    question:'Sorumlu kim?'
-  },
-  {
-    key:'target',
-    question:'Hedef nedir? Örneğin 60 metre.'
-  },
-  {
-    key:'confirm',
-    question:'Bilgiler doğru mu? Evet veya hayır deyin.'
-  }
+  {key:'team',question:'Hangi ekip? Örneğin Ekip 1.'},
+  {key:'location',question:'Kilometre veya çalışma yeri nedir? Örneğin 24 artı 500.'},
+  {key:'work',question:'Yapılacak iş nedir?'},
+  {key:'diameter',question:'Boru çapı nedir? Örneğin 1000.'},
+  {key:'supervisor',question:'Sorumlu kim?'},
+  {key:'personnel',question:'Personel adı nedir? Personel yoksa yok deyin.'},
+  {key:'personnelMore',question:'Başka personel var mı? Evet veya hayır deyin.'},
+  {key:'vehicle',question:'Araç veya makine nedir? Örneğin kamyon 3 veya JCB 2. Yoksa yok deyin.'},
+  {key:'vehicleMore',question:'Başka araç veya makine var mı? Evet veya hayır deyin.'},
+  {key:'target',question:'Hedef nedir? Örneğin 60 metre.'},
+  {key:'confirm',question:'Bilgiler doğru mu? Evet veya hayır deyin.'}
 ];
 
 function $(id){return document.getElementById(id)}
@@ -74,23 +58,12 @@ function trFold(s){
 }
 
 function speechSupported(){
-  return !!(
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition
-  );
+  return !!(window.SpeechRecognition||window.webkitSpeechRecognition);
 }
 
-
-/* =========================================================
-   SESLİ SORU - CEVAP ASİSTANI
-========================================================= */
-
 function toggleRecognition(){
-
   if(listening){
-    try{
-      recognition.stop();
-    }catch(e){}
+    try{recognition.stop()}catch(e){}
     return;
   }
 
@@ -102,9 +75,7 @@ function toggleRecognition(){
   startGuidedAssistant();
 }
 
-
 function startGuidedAssistant(){
-
   if(!speechSupported()){
     setStatus(
       'Bu tarayıcı konuşma tanımayı desteklemiyor. Chrome veya Edge kullanın.',
@@ -119,30 +90,28 @@ function startGuidedAssistant(){
 
   $('transcript').value='';
 
+  [
+    'team','supervisor','location','work',
+    'targetQty','people','vehicles','note'
+  ].forEach(id=>$(id).value='');
+
+  $('targetUnit').value='';
+  $('confidence').textContent='Bekliyor';
+
   $('startBtn').classList.add('listening');
   $('startBtn').textContent='⏹️ Asistanı Durdur';
 
-  setStatus(
-    'Sesli asistan başladı.',
-    'ok'
-  );
+  setStatus('Sesli asistan başladı.','ok');
 
-  setTimeout(
-    askGuidedQuestion,
-    300
-  );
+  setTimeout(askGuidedQuestion,300);
 }
 
-
 function stopGuidedAssistant(){
-
   guidedActive=false;
   listening=false;
 
   if(recognition){
-    try{
-      recognition.stop();
-    }catch(e){}
+    try{recognition.stop()}catch(e){}
   }
 
   if(window.speechSynthesis){
@@ -152,17 +121,11 @@ function stopGuidedAssistant(){
   $('startBtn').classList.remove('listening');
   $('startBtn').textContent='🎙️ Konuşmaya Başla';
 
-  setStatus(
-    'Sesli asistan durduruldu.'
-  );
+  setStatus('Sesli asistan durduruldu.');
 }
 
-
 function askGuidedQuestion(){
-
-  if(!guidedActive){
-    return;
-  }
+  if(!guidedActive)return;
 
   if(guidedIndex>=guidedSteps.length){
     finishGuidedAssistant();
@@ -171,90 +134,65 @@ function askGuidedQuestion(){
 
   const step=guidedSteps[guidedIndex];
 
-  setStatus(
-    step.question,
-    'ok'
-  );
+  setStatus(step.question,'ok');
 
-  speakTurkish(
-    step.question,
-    ()=>{
-      if(guidedActive){
-        startGuidedRecognition();
-      }
+  speakTurkish(step.question,()=>{
+    if(guidedActive){
+      startGuidedRecognition();
     }
-  );
+  });
 }
 
-
 function speakTurkish(text,callback){
-
   if(!window.speechSynthesis){
-    if(callback){
-      callback();
-    }
+    if(callback)callback();
     return;
   }
 
   window.speechSynthesis.cancel();
 
-  const utterance=
-    new SpeechSynthesisUtterance(text);
-
+  const utterance=new SpeechSynthesisUtterance(text);
   utterance.lang='tr-TR';
 
-const voices=window.speechSynthesis.getVoices();
+  const voices=window.speechSynthesis.getVoices();
 
-const femaleVoice=
-  voices.find(v=>
-    v.lang &&
-    v.lang.toLowerCase().startsWith('tr') &&
-    /female|kadın|filiz|emel|yelda|selin/i.test(v.name)
-  )
-  ||
-  voices.find(v=>
-    v.lang &&
-    v.lang.toLowerCase().startsWith('tr')
-  );
+  const femaleVoice=
+    voices.find(v=>
+      v.lang &&
+      v.lang.toLowerCase().startsWith('tr') &&
+      /female|kadın|filiz|emel|yelda|selin/i.test(v.name)
+    )
+    ||
+    voices.find(v=>
+      v.lang &&
+      v.lang.toLowerCase().startsWith('tr')
+    );
 
-if(femaleVoice){
-  utterance.voice=femaleVoice;
-}
+  if(femaleVoice){
+    utterance.voice=femaleVoice;
+  }
 
-utterance.rate=0.95;
-utterance.pitch=1.05;
+  utterance.rate=0.95;
+  utterance.pitch=1.05;
 
   utterance.onend=()=>{
-    setTimeout(
-      ()=>{
-        if(callback){
-          callback();
-        }
-      },
-      250
-    );
+    setTimeout(()=>{
+      if(callback)callback();
+    },250);
   };
 
   utterance.onerror=()=>{
-    if(callback){
-      callback();
-    }
+    if(callback)callback();
   };
 
-  window.speechSynthesis.speak(
-    utterance
-  );
+  window.speechSynthesis.speak(utterance);
 }
 
-
 function startGuidedRecognition(){
-
-  if(!guidedActive){
-    return;
-  }
+  if(!guidedActive)return;
 
   const SR=
-    window.SpeechRecognition ||
+    window.SpeechRecognition||
     window.webkitSpeechRecognition;
 
   recognition=new SR();
@@ -268,125 +206,74 @@ function startGuidedRecognition(){
 
   recognition.onstart=()=>{
     listening=true;
-
-    setStatus(
-      '🎙️ Cevabınızı dinliyorum…',
-      'ok'
-    );
+    setStatus('🎙️ Cevabınızı dinliyorum…','ok');
   };
 
-
   recognition.onresult=(event)=>{
-
     let interim='';
 
-    for(
-      let i=event.resultIndex;
-      i<event.results.length;
-      i++
-    ){
-
-      const t=
-        event.results[i][0].transcript || '';
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      const t=event.results[i][0].transcript||'';
 
       if(event.results[i].isFinal){
         answer+=' '+t;
-      }
-      else{
+      }else{
         interim+=' '+t;
       }
     }
 
-    const live=
-      normalizeSpaces(
-        answer+' '+interim
-      );
+    const live=normalizeSpaces(answer+' '+interim);
 
     if(live){
-      setStatus(
-        'Duyduğum: '+live,
-        'ok'
-      );
+      setStatus('Duyduğum: '+live,'ok');
     }
   };
 
-
   recognition.onerror=(event)=>{
-
     listening=false;
 
-    const code=
-      String(event.error||'');
+    const code=String(event.error||'');
 
     if(code==='no-speech'){
-
       setStatus(
         'Ses duyamadım. Aynı soruyu tekrar soruyorum.',
         'err'
       );
 
-      setTimeout(
-        askGuidedQuestion,
-        1000
-      );
-
+      setTimeout(askGuidedQuestion,1000);
       return;
     }
 
     if(code==='not-allowed'){
-
       guidedActive=false;
 
       $('startBtn').classList.remove('listening');
       $('startBtn').textContent='🎙️ Konuşmaya Başla';
 
-      setStatus(
-        'Mikrofon izni verilmedi.',
-        'err'
-      );
-
+      setStatus('Mikrofon izni verilmedi.','err');
       return;
     }
 
-    setStatus(
-      'Ses algılama hatası: '+code,
-      'err'
-    );
+    setStatus('Ses algılama hatası: '+code,'err');
   };
-
 
   recognition.onend=()=>{
-
     listening=false;
+    answer=normalizeSpaces(answer);
 
-    answer=
-      normalizeSpaces(answer);
-
-    if(!guidedActive){
-      return;
-    }
+    if(!guidedActive)return;
 
     if(!answer){
-
-      setTimeout(
-        askGuidedQuestion,
-        700
-      );
-
+      setTimeout(askGuidedQuestion,700);
       return;
     }
 
-    processGuidedAnswer(
-      answer
-    );
+    processGuidedAnswer(answer);
   };
-
 
   try{
     recognition.start();
-  }
-  catch(e){
-
+  }catch(e){
     setStatus(
       'Mikrofon başlatılamadı: '+e.message,
       'err'
@@ -394,117 +281,129 @@ function startGuidedRecognition(){
   }
 }
 
-
 function processGuidedAnswer(answer){
+  const step=guidedSteps[guidedIndex];
 
-  const step=
-    guidedSteps[guidedIndex];
-const check=validateGuidedAnswer(step.key,answer);
+  const check=validateGuidedAnswer(step.key,answer);
 
-if(!check.ok){
+  if(!check.ok){
+    setStatus(check.message,'err');
 
-  setStatus(
-    check.message,
-    'err'
-  );
+    speakTurkish(check.message,()=>{
+      setTimeout(askGuidedQuestion,400);
+    });
 
-  speakTurkish(
-    check.message,
-    ()=>{
-      setTimeout(
-        askGuidedQuestion,
-        400
-      );
-    }
-  );
+    return;
+  }
 
-  return;
-}
-  appendConversation(
-    step.question,
-    answer
-  );
-
+  appendConversation(step.question,answer);
 
   if(step.key==='team'){
-
-    $('team').value=
-      formatTeamAnswer(answer);
+    $('team').value=formatTeamAnswer(answer);
   }
-
 
   else if(step.key==='location'){
-
-    $('location').value=
-      formatKmAnswer(answer);
+    $('location').value=formatKmAnswer(answer);
   }
-
 
   else if(step.key==='work'){
+    $('work').value=formatWorkAnswer(answer);
+  }
 
-    $('work').value=
-      formatWorkAnswer(answer);
-    }
   else if(step.key==='diameter'){
+    const m=String(answer).match(/\d{2,4}/);
 
-  const m=String(answer).match(/\d{2,4}/);
+    if(m){
+      const diameter=m[0];
 
-  if(m){
-    const diameter=m[0];
+      let currentWork=$('work').value.trim();
 
-    let currentWork=
-      $('work').value.trim();
+      currentWork=
+        currentWork.replace(/^Ø\d+\s*/,'').trim();
 
-    currentWork=
-      currentWork.replace(/^Ø\d+\s*/,'').trim();
-
-    $('work').value=
-      'Ø'+diameter+' '+currentWork;
-  }
-}  else if(step.key==='supervisor'){
-
-    const person=
-      formatPersonAnswer(answer);
-
-    $('supervisor').value=
-      person;
-
-    $('people').value=
-      person;
+      $('work').value=
+        'Ø'+diameter+(currentWork?' '+currentWork:'');
+    }
   }
 
+  else if(step.key==='supervisor'){
+    const person=formatPersonAnswer(answer);
+
+    $('supervisor').value=person;
+
+    addCommaValue('people',person);
+  }
+
+  else if(step.key==='personnel'){
+    const folded=trFold(answer);
+
+    if(!isNoValue(folded)){
+      const person=formatPersonAnswer(answer);
+      addCommaValue('people',person);
+    }
+  }
+
+  else if(step.key==='personnelMore'){
+    const folded=trFold(answer);
+
+    if(isYes(folded)){
+      guidedIndex=findStepIndex('personnel');
+
+      setTimeout(askGuidedQuestion,450);
+      return;
+    }
+
+    if(isNo(folded)){
+      guidedIndex=findStepIndex('vehicle');
+
+      setTimeout(askGuidedQuestion,450);
+      return;
+    }
+  }
+
+  else if(step.key==='vehicle'){
+    const folded=trFold(answer);
+
+    if(!isNoValue(folded)){
+      addCommaValue(
+        'vehicles',
+        formatVehicleAnswer(answer)
+      );
+    }
+  }
+
+  else if(step.key==='vehicleMore'){
+    const folded=trFold(answer);
+
+    if(isYes(folded)){
+      guidedIndex=findStepIndex('vehicle');
+
+      setTimeout(askGuidedQuestion,450);
+      return;
+    }
+
+    if(isNo(folded)){
+      guidedIndex=findStepIndex('target');
+
+      setTimeout(askGuidedQuestion,450);
+      return;
+    }
+  }
 
   else if(step.key==='target'){
+    const target=formatTargetAnswer(answer);
 
-    const target=
-      formatTargetAnswer(answer);
-
-    $('targetQty').value=
-      target.qty;
-
-    $('targetUnit').value=
-      target.unit;
+    $('targetQty').value=target.qty;
+    $('targetUnit').value=target.unit;
   }
 
-
   else if(step.key==='confirm'){
+    const folded=trFold(answer);
 
-    const folded=
-      trFold(answer);
+    if(isYes(folded)){
+      $('confidence').textContent='Onaylandı';
 
-    if(
-      folded.includes('EVET') ||
-      folded.includes('DOGRU') ||
-      folded.includes('TAMAM')
-    ){
-
-      $('confidence').textContent=
-        'Onaylandı';
-
-      setStatus(
-        'Bilgiler onaylandı.',
-        'ok'
-      );
+      setStatus('Bilgiler onaylandı.','ok');
 
       guidedActive=false;
 
@@ -521,12 +420,7 @@ if(!check.ok){
       return;
     }
 
-
-    if(
-      folded.includes('HAYIR') ||
-      folded.includes('YANLIS')
-    ){
-
+    if(isNo(folded)){
       setStatus(
         'Tamam. Bilgileri yeniden alıyorum.',
         'err'
@@ -539,45 +433,91 @@ if(!check.ok){
 
           $('transcript').value='';
 
-          setTimeout(
-            askGuidedQuestion,
-            400
-          );
+          [
+            'team','supervisor','location','work',
+            'targetQty','people','vehicles','note'
+          ].forEach(id=>$(id).value='');
+
+          $('targetUnit').value='';
+
+          setTimeout(askGuidedQuestion,400);
         }
       );
 
       return;
     }
-
-
-    setStatus(
-      'Evet veya hayır demenizi bekliyorum.',
-      'err'
-    );
-
-    setTimeout(
-      askGuidedQuestion,
-      600
-    );
-
-    return;
   }
-
 
   guidedIndex++;
 
-  setTimeout(
-    askGuidedQuestion,
-    450
+  setTimeout(askGuidedQuestion,450);
+}
+
+function findStepIndex(key){
+  const i=guidedSteps.findIndex(x=>x.key===key);
+  return i>=0?i:0;
+}
+
+function isYes(folded){
+  return (
+    folded.includes('EVET') ||
+    folded.includes('DOGRU') ||
+    folded.includes('TAMAM') ||
+    folded.includes('VAR')
   );
 }
-function validateGuidedAnswer(key,answer){
 
+function isNo(folded){
+  return (
+    folded.includes('HAYIR') ||
+    folded.includes('YANLIS') ||
+    folded==='YOK' ||
+    folded.includes('YOK')
+  );
+}
+
+function isNoValue(folded){
+  return (
+    folded==='YOK' ||
+    folded==='YOKTUR' ||
+    folded.includes('PERSONEL YOK') ||
+    folded.includes('ARAC YOK') ||
+    folded.includes('MAKINE YOK')
+  );
+}
+
+function addCommaValue(id,value){
+  value=normalizeSpaces(value);
+
+  if(!value)return;
+
+  const arr=$(id).value
+    .split(',')
+    .map(x=>x.trim())
+    .filter(Boolean);
+
+  const folded=trFold(value);
+
+  const exists=
+    arr.some(x=>trFold(x)===folded);
+
+  if(!exists){
+    arr.push(value);
+  }
+
+  $(id).value=arr.join(', ');
+}
+
+function formatVehicleAnswer(answer){
+  return normalizeSpaces(answer)
+    .replace(/[.,;:]+$/,'');
+}
+
+function validateGuidedAnswer(key,answer){
   const raw=normalizeSpaces(answer);
   const folded=trFold(raw);
 
   if(key==='team'){
-
     const m=folded.match(/\bEKIP\s*(\d{1,2})\b/);
 
     if(!m){
@@ -589,7 +529,7 @@ function validateGuidedAnswer(key,answer){
 
     const n=Number(m[1]);
 
-    if(n<1 || n>12){
+    if(n<1||n>12){
       return {
         ok:false,
         message:'Ekip numarası 1 ile 12 arasında olmalı.'
@@ -597,20 +537,10 @@ function validateGuidedAnswer(key,answer){
     }
   }
 
-
   if(key==='supervisor'){
+    const words=raw.split(/\s+/).filter(Boolean);
 
-    const words=
-      raw.split(/\s+/).filter(Boolean);
-
-    if(words.length<2 || words.length>4){
-      return {
-        ok:false,
-        message:'Sorumlu adını anlayamadım. Sadece ad ve soyadı söyleyin.'
-      };
-    }
-
-    if(/\d/.test(raw)){
+    if(words.length<2||words.length>4||/\d/.test(raw)){
       return {
         ok:false,
         message:'Sorumlu adını anlayamadım. Sadece ad ve soyadı söyleyin.'
@@ -618,28 +548,77 @@ function validateGuidedAnswer(key,answer){
     }
   }
 
-if(key==='diameter'){
+  if(key==='diameter'){
+    const m=raw.match(/\d{2,4}/);
 
-  const m=raw.match(/\d{2,4}/);
+    if(!m){
+      return {
+        ok:false,
+        message:'Boru çapını anlayamadım. Örneğin 1000 deyin.'
+      };
+    }
 
-  if(!m){
-    return {
-      ok:false,
-      message:'Boru çapını anlayamadım. Örneğin 1000 deyin.'
-    };
+    const n=Number(m[0]);
+
+    if(n<100||n>3000){
+      return {
+        ok:false,
+        message:'Boru çapını anlayamadım. Çapı tekrar söyleyin.'
+      };
+    }
   }
 
-  const n=Number(m[0]);
+  if(key==='personnel'){
+    if(isNoValue(folded)){
+      return {ok:true,message:''};
+    }
 
-  if(n<100 || n>3000){
-    return {
-      ok:false,
-      message:'Boru çapını anlayamadım. Çapı tekrar söyleyin.'
-    };
+    const words=raw.split(/\s+/).filter(Boolean);
+
+    if(
+      words.length<2 ||
+      words.length>4 ||
+      /\d/.test(raw)
+    ){
+      return {
+        ok:false,
+        message:'Personel adını anlayamadım. Sadece ad ve soyadı söyleyin. Personel yoksa yok deyin.'
+      };
+    }
   }
-}
+
+  if(key==='personnelMore'){
+    if(!isYes(folded)&&!isNo(folded)){
+      return {
+        ok:false,
+        message:'Başka personel varsa evet, yoksa hayır deyin.'
+      };
+    }
+  }
+
+  if(key==='vehicle'){
+    if(isNoValue(folded)){
+      return {ok:true,message:''};
+    }
+
+    if(raw.length<2||raw.length>60){
+      return {
+        ok:false,
+        message:'Araç veya makineyi anlayamadım. Örneğin kamyon 3 veya JCB 2 deyin.'
+      };
+    }
+  }
+
+  if(key==='vehicleMore'){
+    if(!isYes(folded)&&!isNo(folded)){
+      return {
+        ok:false,
+        message:'Başka araç veya makine varsa evet, yoksa hayır deyin.'
+      };
+    }
+  }
+
   if(key==='target'){
-
     if(!/\d/.test(raw)){
       return {
         ok:false,
@@ -648,17 +627,8 @@ if(key==='diameter'){
     }
   }
 
-
   if(key==='confirm'){
-
-    const valid=
-      folded.includes('EVET') ||
-      folded.includes('DOGRU') ||
-      folded.includes('TAMAM') ||
-      folded.includes('HAYIR') ||
-      folded.includes('YANLIS');
-
-    if(!valid){
+    if(!isYes(folded)&&!isNo(folded)){
       return {
         ok:false,
         message:'Lütfen evet veya hayır deyin.'
@@ -673,9 +643,7 @@ if(key==='diameter'){
 }
 
 function appendConversation(question,answer){
-
-  const old=
-    $('transcript').value.trim();
+  const old=$('transcript').value.trim();
 
   const line=
     'SORU: '+question+
@@ -687,44 +655,31 @@ function appendConversation(question,answer){
       : line;
 }
 
-
 function formatTeamAnswer(answer){
+  const folded=trFold(answer);
 
-  const folded=
-    trFold(answer);
-
-  let m=
-    folded.match(
-      /EKIP\s*(\d{1,2})/
-    );
+  let m=folded.match(/EKIP\s*(\d{1,2})/);
 
   if(m){
     return 'Ekip '+m[1];
   }
 
   const numbers={
-    'BIR':'1',
-    'IKI':'2',
-    'UC':'3',
-    'DORT':'4',
-    'BES':'5',
-    'ALTI':'6',
-    'YEDI':'7',
-    'SEKIZ':'8',
-    'DOKUZ':'9',
-    'ON':'10',
+    'ON IKI':'12',
     'ON BIR':'11',
-    'ON IKI':'12'
+    'ON':'10',
+    'DOKUZ':'9',
+    'SEKIZ':'8',
+    'YEDI':'7',
+    'ALTI':'6',
+    'BES':'5',
+    'DORT':'4',
+    'UC':'3',
+    'IKI':'2',
+    'BIR':'1'
   };
 
-  const keys=
-    Object.keys(numbers)
-      .sort(
-        (a,b)=>b.length-a.length
-      );
-
-  for(const key of keys){
-
+  for(const key of Object.keys(numbers)){
     if(folded.includes(key)){
       return 'Ekip '+numbers[key];
     }
@@ -733,11 +688,8 @@ function formatTeamAnswer(answer){
   return normalizeSpaces(answer);
 }
 
-
 function formatKmAnswer(answer){
-
-  let s=
-    trFold(answer);
+  let s=trFold(answer);
 
   s=s
     .replace(/KILOMETRE/g,'')
@@ -746,802 +698,11 @@ function formatKmAnswer(answer){
     .replace(/\s+/g,' ')
     .trim();
 
-  let m=
-    s.match(
-      /(\d{1,4})\s*\+\s*(\d{1,3})/
-    );
+  let m=s.match(/(\d{1,4})\s*\+\s*(\d{1,3})/);
 
   if(m){
-
     return (
       'KM '+
       Number(m[1])+
       '+'+
-      String(m[2]).padStart(3,'0')
-    );
-  }
-
-  m=
-    s.match(
-      /(\d{4,7})/
-    );
-
-  if(m){
-    return kmFormatV2(
-      m[1]
-    );
-  }
-
-  return normalizeSpaces(answer);
-}
-
-
-function formatWorkAnswer(answer){
-
-  const raw=
-    normalizeSpaces(answer);
-
-  const diameter=
-    raw.match(
-      /(\d{2,4})\s*['’]?\s*(?:lük|luk|lik|lık)?/i
-    );
-
-  let action='';
-
-  if(/boru\s+döş/i.test(raw)){
-    action='boru döşeme';
-  }
-  else if(/kazı|kazi/i.test(raw)){
-    action='kazı';
-  }
-  else if(/dolgu/i.test(raw)){
-    action='dolgu';
-  }
-  else if(/beton/i.test(raw)){
-    action='beton imalatı';
-  }
-  else if(/rögar|rogar/i.test(raw)){
-    action='rögar imalatı';
-  }
-
-  if(diameter && action){
-
-    return (
-      'Ø'+
-      diameter[1]+
-      ' '+
-      action
-    );
-  }
-
-  return raw;
-}
-
-
-function formatPersonAnswer(answer){
-
-  let s=
-    normalizeSpaces(answer)
-      .replace(
-        /^(?:sorumlu|formen)\s+/i,
-        ''
-      )
-      .replace(
-        /[.,;:]+$/,
-        ''
-      );
-
-  return s
-    .split(' ')
-    .map(
-      word=>
-        word
-          ? word.charAt(0)
-              .toLocaleUpperCase('tr-TR')+
-            word.slice(1)
-              .toLocaleLowerCase('tr-TR')
-          : ''
-    )
-    .join(' ');
-}
-
-
-function formatTargetAnswer(answer){
-
-  const raw=
-    normalizeSpaces(answer);
-
-  const m=
-    raw.match(
-      /(\d+(?:[.,]\d+)?)\s*(metre|meter|m\b|m2|m²|m3|m³|adet|ton|kg)?/i
-    );
-
-  if(!m){
-
-    return {
-      qty:raw,
-      unit:''
-    };
-  }
-
-  const qty=
-    String(m[1])
-      .replace(',','.');
-
-  let unit=
-    String(m[2]||'m')
-      .toLowerCase();
-
-  if(
-    unit==='metre' ||
-    unit==='meter' ||
-    unit==='m'
-  ){
-    unit='m';
-  }
-
-  return {
-    qty,
-    unit
-  };
-}
-
-
-function finishGuidedAssistant(){
-
-  guidedActive=false;
-  listening=false;
-
-  $('startBtn').classList.remove('listening');
-  $('startBtn').textContent='🎙️ Konuşmaya Başla';
-
-  setStatus(
-    'Sesli giriş tamamlandı.',
-    'ok'
-  );
-}
-
-
-/* =========================================================
-   TEMİZLE
-========================================================= */
-
-function clearTranscript(){
-
-  if(guidedActive){
-    stopGuidedAssistant();
-  }
-
-  $('transcript').value='';
-  finalText='';
-
-  [
-    'team',
-    'supervisor',
-    'location',
-    'work',
-    'targetQty',
-    'people',
-    'vehicles',
-    'note'
-  ].forEach(
-    id=>$(id).value=''
-  );
-
-  $('start').value='08:00';
-  $('end').value='17:00';
-  $('targetUnit').value='';
-  $('confidence').textContent='Bekliyor';
-
-  setStatus(
-    'Temizlendi.'
-  );
-}
-
-
-/* =========================================================
-   ESKİ V2 PARSER FONKSİYONLARI
-   Manuel metin girilirse yine kullanılabilir.
-========================================================= */
-
-function parseTime(text,keys){
-
-  const keyPart=
-    keys.join('|');
-
-  const r=
-    new RegExp(
-      '(?:'+keyPart+')\\s*(\\d{1,2})(?:[:.\\s](\\d{2}))?',
-      'i'
-    ).exec(text);
-
-  if(!r){
-    return '';
-  }
-
-  const hh=
-    String(
-      Math.min(
-        23,
-        Number(r[1])
-      )
-    ).padStart(2,'0');
-
-  const mm=
-    String(
-      r[2]||'00'
-    ).padStart(2,'0');
-
-  return hh+':'+mm;
-}
-
-
-function kmFormatV2(raw){
-
-  let s=
-    String(raw||'')
-      .replace(/[^\d]/g,'');
-
-  if(!s){
-    return '';
-  }
-
-  if(s.length<=3){
-    return 'KM '+s;
-  }
-
-  return (
-    'KM '+
-    s.slice(0,-3)+
-    '+'+
-    s.slice(-3)
-  );
-}
-
-
-function cleanPersonNameV2(name){
-
-  return normalizeSpaces(
-    String(name||'')
-      .replace(
-        /\b(?:başlangıç|baslangic|bitiş|bitis|hedef|kilometre|km|saat)\b.*$/i,
-        ''
-      )
-      .replace(
-        /[.,;:]+$/,
-        ''
-      )
-  );
-}
-
-
-function extractSupervisorV2(raw){
-
-  const m=
-    raw.match(
-      /(?:sorumlu|formen)\s+([A-Za-zÇĞİÖŞÜçğıöşü]+(?:\s+[A-Za-zÇĞİÖŞÜçğıöşü]+){1,3})/i
-    );
-
-  return m
-    ? cleanPersonNameV2(m[1])
-    : '';
-}
-
-
-function extractLocationV2(raw){
-
-  let m=
-    raw.match(
-      /\bkilometre\s*(\d{1,7})\b/i
-    );
-
-  if(m){
-    return kmFormatV2(
-      m[1]
-    );
-  }
-
-  m=
-    raw.match(
-      /\bkm\s*(\d{1,4})\s*[+.,]?\s*(\d{1,3})\b/i
-    );
-
-  if(m){
-
-    return (
-      'KM '+
-      Number(m[1])+
-      '+'+
-      String(m[2])
-        .padStart(3,'0')
-    );
-  }
-
-  m=
-    raw.match(
-      /(?:ekip\s*\d+\s+)?(.{2,70}?)(?:\s+(?:hattında|hatta|bölgesinde|bolgesinde|lokasyonunda))\b/i
-    );
-
-  if(m){
-
-    let v=
-      normalizeSpaces(m[1])
-        .replace(
-          /^yarın\s+/i,
-          ''
-        )
-        .replace(
-          /^bugün\s+/i,
-          ''
-        );
-
-    v=
-      v.replace(
-        /^kilometre\s*\d+\s*/i,
-        ''
-      );
-
-    if(v.length<80){
-      return v;
-    }
-  }
-
-  return '';
-}
-
-
-function extractWorkV2(raw){
-
-  const diameter=
-    raw.match(
-      /(\d{2,4})\s*['’]?\s*lük\b/i
-    );
-
-  let action='';
-
-  if(/boru\s+döş/i.test(raw)){
-    action='boru döşeme';
-  }
-  else if(/kazı|kazi/i.test(raw)){
-    action='kazı';
-  }
-  else if(/dolgu/i.test(raw)){
-    action='dolgu';
-  }
-  else if(/beton/i.test(raw)){
-    action='beton imalatı';
-  }
-  else if(/rögar|rogar/i.test(raw)){
-    action='rögar imalatı';
-  }
-
-  if(diameter && action){
-
-    return (
-      'Ø'+
-      diameter[1]+
-      ' '+
-      action
-    );
-  }
-
-  let work=
-    raw
-      .replace(
-        /\bEkip\s*\d+\b/ig,
-        ''
-      )
-      .replace(
-        /\bkilometre\s*\d+\b/ig,
-        ''
-      )
-      .replace(
-        /\bKM\s*\d+(?:\s*[+.,]\s*\d+)?\b/ig,
-        ''
-      )
-      .replace(
-        /Sorumlu\s+[A-Za-zÇĞİÖŞÜçğıöşü]+(?:\s+[A-Za-zÇĞİÖŞÜçğıöşü]+){1,3}[.,;]?/ig,
-        ''
-      )
-      .replace(
-        /Başlangıç\s*\d{1,2}(?:[:.\s]\d{2})?[.,;]?/ig,
-        ''
-      )
-      .replace(
-        /Bitiş\s*\d{1,2}(?:[:.\s]\d{2})?[.,;]?/ig,
-        ''
-      )
-      .replace(
-        /Hedef\s*\d+(?:[.,]\d+)?\s*(?:metre|m\b|m²|m3|m³|adet|ton|kg)[.,;]?/ig,
-        ''
-      );
-
-  return normalizeSpaces(work)
-    .replace(
-      /^[,.;:\-\s]+|[,.;:\-\s]+$/g,
-      ''
-    );
-}
-
-
-function parseTranscript(){
-
-  const raw=
-    normalizeSpaces(
-      $('transcript').value
-    );
-
-  if(!raw){
-
-    setStatus(
-      'Önce konuşun veya metin yazın.',
-      'err'
-    );
-
-    return;
-  }
-
-  let score=0;
-
-  const team=
-    raw.match(
-      /\b(ekip\s*\d+)\b/i
-    );
-
-  if(team){
-
-    $('team').value=
-      team[1]
-        .replace(/\s+/g,' ');
-
-    score++;
-  }
-
-  const supervisor=
-    extractSupervisorV2(raw);
-
-  if(supervisor){
-
-    $('supervisor').value=
-      supervisor;
-
-    score++;
-  }
-
-  const location=
-    extractLocationV2(raw);
-
-  if(location){
-
-    $('location').value=
-      location;
-
-    score++;
-  }
-
-  const start=
-    parseTime(
-      raw,
-      [
-        'başlangıç',
-        'baslangic',
-        'saat'
-      ]
-    );
-
-  const end=
-    parseTime(
-      raw,
-      [
-        'bitiş',
-        'bitis',
-        'bitecek',
-        'kadar'
-      ]
-    );
-
-  if(start){
-
-    $('start').value=
-      start;
-
-    score++;
-  }
-
-  if(end){
-
-    $('end').value=
-      end;
-
-    score++;
-  }
-
-  const target=
-    raw.match(
-      /(?:hedef|planlanan|yaklaşık|yaklasik)\s*(\d+(?:[.,]\d+)?)\s*(metre|m\b|m2|m²|m3|m³|adet|ton|kg)/i
-    );
-
-  if(target){
-
-    $('targetQty').value=
-      String(target[1])
-        .replace(',','.');
-
-    const u=
-      target[2]
-        .toLowerCase();
-
-    $('targetUnit').value=
-      u.startsWith('metre') ||
-      u==='m'
-        ? 'm'
-        : u;
-
-    score++;
-  }
-
-  const work=
-    extractWorkV2(raw);
-
-  $('work').value=
-    work||raw;
-
-  if(work){
-    score++;
-  }
-
-  const people=[];
-
-  if(supervisor){
-    people.push(
-      supervisor
-    );
-  }
-
-  $('people').value=
-    [...new Set(people)]
-      .join(', ');
-
-  const vehicleTerms=[];
-
-  const vr=
-    raw.match(
-      /((?:cat|jcb|ekskavatör|ekskavator|kamyon|pikap|vinç|vinc|loader|dozer)[^.;,]*)/ig
-    );
-
-  if(vr){
-
-    vehicleTerms.push(
-      ...vr.map(
-        normalizeSpaces
-      )
-    );
-  }
-
-  $('vehicles').value=
-    [...new Set(vehicleTerms)]
-      .join(', ');
-
-  $('confidence').textContent=
-    score>=6
-      ? 'İyi'
-      : score>=4
-      ? 'Orta'
-      : 'Kontrol Gerekli';
-
-  setStatus(
-    'V2 taslak oluşturuldu.',
-    'ok'
-  );
-}
-
-
-/* =========================================================
-   TASLAK
-========================================================= */
-
-function collectDraft(){
-
-  return {
-
-    type:
-      'TOMORROW_WORK_PLAN',
-
-    createdAt:
-      new Date().toISOString(),
-
-    transcript:
-      $('transcript').value.trim(),
-
-    team:
-      $('team').value.trim(),
-
-    supervisor:
-      $('supervisor').value.trim(),
-
-    location:
-      $('location').value.trim(),
-
-    work:
-      $('work').value.trim(),
-
-    start:
-      $('start').value,
-
-    end:
-      $('end').value,
-
-    targetQty:
-      $('targetQty').value,
-
-    targetUnit:
-      $('targetUnit').value,
-
-    people:
-      $('people').value
-        .split(',')
-        .map(
-          x=>x.trim()
-        )
-        .filter(Boolean),
-
-    vehicles:
-      $('vehicles').value
-        .split(',')
-        .map(
-          x=>x.trim()
-        )
-        .filter(Boolean),
-
-    note:
-      $('note').value.trim()
-  };
-}
-
-
-function showPreview(){
-
-  const d=
-    collectDraft();
-
-  const rows=[
-
-    [
-      'Ekip',
-      d.team||'-'
-    ],
-
-    [
-      'Sorumlu',
-      d.supervisor||'-'
-    ],
-
-    [
-      'Lokasyon',
-      d.location||'-'
-    ],
-
-    [
-      'Yapılacak İş',
-      d.work||'-'
-    ],
-
-    [
-      'Saat',
-      d.start+' – '+d.end
-    ],
-
-    [
-      'Hedef',
-      d.targetQty
-        ? d.targetQty+' '+d.targetUnit
-        : '-'
-    ],
-
-    [
-      'Personel',
-      d.people.join(', ')||'-'
-    ],
-
-    [
-      'Araç / Makine',
-      d.vehicles.join(', ')||'-'
-    ],
-
-    [
-      'Not',
-      d.note||'-'
-    ]
-  ];
-
-  $('previewBody').innerHTML=
-    rows.map(
-      r=>
-        '<div class="preview-row">'+
-          '<span>'+r[0]+'</span>'+
-          '<b>'+escapeHtml(r[1])+'</b>'+
-        '</div>'
-    ).join('');
-
-  $('preview').classList.remove(
-    'hidden'
-  );
-}
-
-
-function closePreview(){
-
-  $('preview').classList.add(
-    'hidden'
-  );
-}
-
-
-function escapeHtml(s){
-
-  return String(s||'')
-    .replace(
-      /[&<>"']/g,
-      m=>({
-        '&':'&amp;',
-        '<':'&lt;',
-        '>':'&gt;',
-        '"':'&quot;',
-        "'":'&#39;'
-      }[m])
-    );
-}
-
-
-function exportJson(){
-
-  const d=
-    collectDraft();
-
-  const blob=
-    new Blob(
-      [
-        JSON.stringify(
-          d,
-          null,
-          2
-        )
-      ],
-      {
-        type:
-          'application/json;charset=utf-8'
-      }
-    );
-
-  const a=
-    document.createElement(
-      'a'
-    );
-
-  a.href=
-    URL.createObjectURL(
-      blob
-    );
-
-  a.download=
-    'Akdeniz_Sesli_Saha_Taslak_'+
-    new Date()
-      .toISOString()
-      .slice(0,10)+
-    '.json';
-
-  document.body.appendChild(
-    a
-  );
-
-  a.click();
-
-  a.remove();
-
-  setTimeout(
-    ()=>URL.revokeObjectURL(
-      a.href
-    ),
-    500
-  );
-}
+      String(m[2]).
