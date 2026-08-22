@@ -199,8 +199,27 @@ function speakTurkish(text,callback){
     new SpeechSynthesisUtterance(text);
 
   utterance.lang='tr-TR';
-  utterance.rate=0.95;
-  utterance.pitch=1;
+
+const voices=window.speechSynthesis.getVoices();
+
+const femaleVoice=
+  voices.find(v=>
+    v.lang &&
+    v.lang.toLowerCase().startsWith('tr') &&
+    /female|kadın|filiz|emel|yelda|selin/i.test(v.name)
+  )
+  ||
+  voices.find(v=>
+    v.lang &&
+    v.lang.toLowerCase().startsWith('tr')
+  );
+
+if(femaleVoice){
+  utterance.voice=femaleVoice;
+}
+
+utterance.rate=0.95;
+utterance.pitch=1.05;
 
   utterance.onend=()=>{
     setTimeout(
