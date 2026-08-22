@@ -396,7 +396,27 @@ function processGuidedAnswer(answer){
 
   const step=
     guidedSteps[guidedIndex];
+const check=validateGuidedAnswer(step.key,answer);
 
+if(!check.ok){
+
+  setStatus(
+    check.message,
+    'err'
+  );
+
+  speakTurkish(
+    check.message,
+    ()=>{
+      setTimeout(
+        askGuidedQuestion,
+        400
+      );
+    }
+  );
+
+  return;
+}
   appendConversation(
     step.question,
     answer
@@ -534,7 +554,87 @@ function processGuidedAnswer(answer){
     450
   );
 }
+function validateGuidedAnswer(key,answer){
 
+  const raw=normalizeSpaces(answer);
+  const folded=trFold(raw);
+
+  if(key==='team'){
+
+    const m=folded.match(/\bEKIP\s*(\d{1,2})\b/);
+
+    if(!m){
+      return {
+        ok:false,
+        message:'Ekip numarasını anlayamadım. Örneğin Ekip 3 deyin.'
+      };
+    }
+
+    const n=Number(m[1]);
+
+    if(n<1 || n>12){
+      return {
+        ok:false,
+        message:'Ekip numarası 1 ile 12 arasında olmalı.'
+      };
+    }
+  }
+
+
+  if(key==='supervisor'){
+
+    const words=
+      raw.split(/\s+/).filter(Boolean);
+
+    if(words.length<2 || words.length>4){
+      return {
+        ok:false,
+        message:'Sorumlu adını anlayamadım. Sadece ad ve soyadı söyleyin.'
+      };
+    }
+
+    if(/\d/.test(raw)){
+      return {
+        ok:false,
+        message:'Sorumlu adını anlayamadım. Sadece ad ve soyadı söyleyin.'
+      };
+    }
+  }
+
+
+  if(key==='target'){
+
+    if(!/\d/.test(raw)){
+      return {
+        ok:false,
+        message:'Hedef miktarı anlayamadım. Örneğin 60 metre deyin.'
+      };
+    }
+  }
+
+
+  if(key==='confirm'){
+
+    const valid=
+      folded.includes('EVET') ||
+      folded.includes('DOGRU') ||
+      folded.includes('TAMAM') ||
+      folded.includes('HAYIR') ||
+      folded.includes('YANLIS');
+
+    if(!valid){
+      return {
+        ok:false,
+        message:'Lütfen evet veya hayır deyin.'
+      };
+    }
+  }
+
+  return {
+    ok:true,
+    message:''
+  };
+}
 
 function appendConversation(question,answer){
 
